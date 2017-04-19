@@ -79,6 +79,34 @@
 
         </li>
 
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">keyword-extractor.</span>keyword_extractor</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.keyword-extractor.keyword_extractor">module keyword-extractor.keyword_extractor</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.keyword-extractor.keyword_extractor.extract">
+            function <span class="apidocSignatureSpan">keyword-extractor.keyword_extractor.</span>extract
+            <span class="apidocSignatureSpan">(str, options)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.keyword-extractor.keyword_extractor.getStopwords">
+            function <span class="apidocSignatureSpan">keyword-extractor.keyword_extractor.</span>getStopwords
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
     </ol></li>
 
 </ol></div>
@@ -194,6 +222,139 @@ var extraction_result = keyword_extractor.<span class="apidocCodeKeywordSpan">ex
     <h2>
         <a href="#apidoc.element.keyword-extractor.getStopwords" id="apidoc.element.keyword-extractor.getStopwords">
         function <span class="apidocSignatureSpan">keyword-extractor.</span>getStopwords
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function _getStopwords(options){
+    options = options || {};
+
+    var _language = options.language || &#x22;english&#x22;;
+    if(supported_languages.indexOf(_language) &#x3c; 0){
+        throw new Error(&#x22;Language must be one of [&#x22;+supported_languages.join(&#x22;,&#x22;)+&#x22;]&#x22;);
+    }
+
+    return stopwords[_language];
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.keyword-extractor.keyword_extractor" id="apidoc.module.keyword-extractor.keyword_extractor">module keyword-extractor.keyword_extractor</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.keyword-extractor.keyword_extractor.extract" id="apidoc.element.keyword-extractor.keyword_extractor.extract">
+        function <span class="apidocSignatureSpan">keyword-extractor.keyword_extractor.</span>extract
+        <span class="apidocSignatureSpan">(str, options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function _extract(str, options){
+    if(_.isEmpty(str)){
+        return [];
+    }
+    if(_.isEmpty(options)){
+        options = {
+            remove_digits: true,
+            return_changed_case: true
+        };
+    }
+    var return_changed_case = options.return_changed_case;
+    var return_chained_words = options.return_chained_words;
+    var remove_digits = options.remove_digits;
+    var _language = options.language || &#x22;english&#x22;;
+    var _remove_duplicates = options.remove_duplicates || false;
+
+    if(supported_languages.indexOf(_language) &#x3c; 0){
+        throw new Error(&#x22;Language must be one of [&#x22;+supported_languages.join(&#x22;,&#x22;)+&#x22;]&#x22;);
+    }
+
+    //  strip any HTML and trim whitespace
+    var text = _.str.trim(_.str.stripTags(str));
+    if(_.isEmpty(text)){
+        return [];
+    }else{
+        var words = text.split(/\s/);
+        var unchanged_words = [];
+        var low_words = [];
+        //  change the case of all the words
+        for(var x = 0;x &#x3c; words.length; x++){
+            var w = words[x].match(/https?:\/\/.*[\r\n]*/g) ? words[x] : words[x].replace(/\.|,|;|!|\?|\(|\)|:|&#x22;|^&#x27;|&#x27;$/g,&#x27;&#x27;);
+            //  remove periods, question marks, exclamation points, commas, and semi-colons
+            //  if this is a short result, make sure it&#x27;s not a single character or something &#x27;odd&#x27;
+            if(w.length === 1){
+                w = w.replace(/-|_|@|&#x26;|#/g,&#x27;&#x27;);
+            }
+            //  if it&#x27;s a number, remove it
+            var digits_match = w.match(/\d/g);
+            if(remove_digits &#x26;&#x26; digits_match &#x26;&#x26; digits_match.length === w.length){
+                w = &#x22;&#x22;;
+            }
+            if(w.length &#x3e; 0){
+                low_words.push(w.toLowerCase());
+                unchanged_words.push(w);
+            }
+        }
+        var results = [];
+        var _stopwords = options.stopwords || _getStopwords({ language: _language });
+        var _last_result_word_index = 0;
+        for(var y = 0; y &#x3c; low_words.length; y++){
+
+            if(_stopwords.indexOf(low_words[y]) &#x3c; 0){
+                var result_word = return_changed_case &#x26;&#x26; !unchanged_words[y].match(/https?:\/\/.*[\r\n]*/g) ? low_words[y] : unchanged_words
+[y];
+
+                if (return_chained_words &#x26;&#x26; _last_result_word_index === y - 1) {
+                  var change_pos = results.length - 1 &#x3c; 0 ? 0 : results.length - 1;
+                  results[change_pos] = results[change_pos] ? results[change_pos] + &#x27; &#x27; + result_word : result_word;
+                } else {
+                  results.push(result_word);
+                }
+
+                _last_result_word_index = y;
+            }
+        }
+
+        if(_remove_duplicates) {
+            results= _.uniq(results, function (item) {
+                return item;
+            });
+        }
+
+        return results;
+    }
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+var keyword_extractor = require(&#x22;keyword-extractor&#x22;);
+
+//  Opening sentence to NY Times Article at
+//  http://www.nytimes.com/2013/09/10/world/middleeast/surprise-russian-proposal-catches-obama-between-putin-and-house-republicans
+.html
+var sentence = &#x22;President Obama woke up Monday facing a Congressional defeat that many in both parties believed could hobble
+ his presidency.&#x22;
+
+//  Extract the keywords
+var extraction_result = keyword_extractor.<span class="apidocCodeKeywordSpan">extract</span>(sentence,{
+     language:&#x22;english&#x22;,
+     remove_digits: true,
+     return_changed_case:true,
+     remove_duplicates: false
+
+});
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.keyword-extractor.keyword_extractor.getStopwords" id="apidoc.element.keyword-extractor.keyword_extractor.getStopwords">
+        function <span class="apidocSignatureSpan">keyword-extractor.keyword_extractor.</span>getStopwords
         <span class="apidocSignatureSpan">(options)</span>
         </a>
     </h2>
